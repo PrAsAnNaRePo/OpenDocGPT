@@ -1,12 +1,10 @@
 import json
-import os
 import re
 from langchain.document_loaders.pdf import PyPDFDirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-import subprocess
-from llama_cpp import Llama
+import ollama
 
 class DocAgent:
     def __init__(
@@ -14,29 +12,13 @@ class DocAgent:
             modelPath,
             model_kwargs,
             encode_kwargs,
-            llm_path
     ) -> None:
         self.embeddings = HuggingFaceEmbeddings(
             model_name=modelPath,
             model_kwargs=model_kwargs,
             encode_kwargs=encode_kwargs
         )
-        gpu = 0
-        try:
-            subprocess.check_output('nvidia-smi')
-            print('Nvidia GPU detected!')
-            gpu = 1
-        except Exception: # this command not being found can raise quite a few different errors depending on the configuration
-            print('No Nvidia GPU in system!')
-
-        self.llm = Llama(
-            model_path=llm_path,
-            n_ctx=4096,
-            n_threads=os.cpu_count()-2,
-            n_gpu_layers=40 if gpu else 0,
-            chat_format='chatml',
-            n_batch=768 if gpu else 512,
-        )
+        self.model_name = 'openchat'
 
         self.messages = []
         self.messages.append(
@@ -84,10 +66,10 @@ NOTE:
                 "content": query
             }
         )
-        llm_response = self.llm.create_chat_completion(
-            messages=self.messages,
-            stream=False,
-        )["choices"][0]["message"]["content"]
+        llm_response = ollama.chat(
+            self.model_name,
+            messages=self.messages
+        )['message']['content']
         fn_call = self.check_for_function_call(llm_response)
         if fn_call is not None:
             print("Function call found: ", fn_call)
@@ -103,10 +85,10 @@ NOTE:
                     "content": "This is the function call response (NOT USER): " + str(res) + "Take this to user and answer the question based on it."
                 }
             )
-            llm_response = self.llm.create_chat_completion(
-                messages=self.messages,
-                stream=False,
-            )["choices"][0]["message"]["content"]
+            llm_response = ollama.chat(
+                model=self.model_name,
+                messages=self.messages
+            )['message']['content']
             return llm_response
         else:
             return llm_response

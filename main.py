@@ -10,7 +10,6 @@ from tkinter import messagebox
 from docagent import DocAgent
 
 DOCUMENTS_DIR = './documents/'
-llm_path = "/home/nnpy/Desktop/Semica/DocGPT-local/openchat-3.5-0106.Q3_K_M.gguf"
 modelPath = "sentence-transformers/all-MiniLM-L12-v2"
 model_kwargs = {'device':'cpu'}
 encode_kwargs = {'normalize_embeddings': False}
@@ -18,8 +17,7 @@ encode_kwargs = {'normalize_embeddings': False}
 agent = DocAgent(
     modelPath=modelPath,
     model_kwargs=model_kwargs,
-    encode_kwargs=encode_kwargs,
-    llm_path=llm_path
+    encode_kwargs=encode_kwargs
 )
 
 customtkinter.set_appearance_mode("dark")
